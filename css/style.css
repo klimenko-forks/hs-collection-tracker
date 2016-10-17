@@ -483,6 +483,24 @@ h2 {
   font-size: 18px;
   padding-right: 30px;
 }
+.side-page .tableDeck td {
+  background-color: #FFFFFF;
+  font-size: 14px;
+  border: 1px dashed #999999;
+  text-align: center;
+}
+.side-page .tableDeck td.normal {
+  background-color: #98FF21;
+}
+.side-page .tableDeck td.golden {
+  background-color: gold;
+}
+.side-page .tableDeck td.dust {
+  background-color: rgba(50, 150, 215, 0.4);
+}
+.side-page .tableDeck td.progress {
+  background-color: rgba(215, 150, 50, 0.4);
+}
 .side-page #progressTable {
   font-size: 10px;
 }
@@ -627,37 +645,37 @@ h2 {
         float: left;
     }
 }
-.col-xs-10ths,
-.col-sm-10ths,
-.col-md-10ths,
-.col-lg-10ths {
+.col-xs-11ths,
+.col-sm-11ths,
+.col-md-11ths,
+.col-lg-11ths {
     position: relative;
     min-height: 1px;
     padding-right: 10px;
     padding-left: 10px;
 }
 
-.col-xs-10ths {
+.col-xs-11ths {
     width: calc(100%/11);
     float: left;
 }
 
 @media (min-width: 768px) {
-    .col-sm-10ths {
+    .col-sm-11ths {
         width: calc(100%/11);
         float: left;
     }
 }
 
 @media (min-width: 992px) {
-    .col-md-10ths {
+    .col-md-11ths {
         width: calc(100%/11);
         float: left;
     }
 }
 
 @media (min-width: 1200px) {
-    .col-lg-10ths {
+    .col-lg-11ths {
         width: calc(100%/11);
         float: left;
     }

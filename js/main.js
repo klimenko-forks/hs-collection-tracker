@@ -106,7 +106,7 @@ var HSCollectionTracker = (function() {
 
 	// The collection of cards, divided by classes
 	var classes = {};
-	var class_all;
+	var classAll = {};
 
 	// Class and card quality currently selected in the tracker
 	var selectedClass = "all";
@@ -125,7 +125,7 @@ var HSCollectionTracker = (function() {
 	var currentDust = 0;
 	var disenchantedDust = 0;
 	
-	var version = 2.160;
+	var version = 2.161;
 	
 	// Card object
 	function card(name, rarity, mana, type, className, set, uncraftable) {
@@ -157,7 +157,8 @@ var HSCollectionTracker = (function() {
 			var copies = getMaxCopies(rarity);
 			this.cards[rarity][card.name] = card;
 
-			if (this.name == 'all') {return;}
+			if (this.name == 'all')
+				return;
 
 			for (var i = 0, quality = "normal"; i < 2; i++, quality = "golden") {
 				updateMissingCards(card, quality, copies);
@@ -262,17 +263,15 @@ var HSCollectionTracker = (function() {
 	}
 
 	function initClassAll() {
+		classAll = new classHS('all');
 
-		class_all = new classHS('all');
-
-		for (className in classes) {
+		for (className in classes)
 			for (rarity in classes[className].cards) {
 				var cards = classes[className].cards[rarity];
-				for (cardName in cards) {
-					class_all.addCard(cards[cardName]);
-				}
+				
+				for (cardName in cards)
+					classAll.addCard(cards[cardName]);
 			}
-		}
 
 		sortCards('all');
 	}
@@ -647,11 +646,10 @@ var HSCollectionTracker = (function() {
 	// Mana cost: Lower > higher
 	// Name: Lexicographical order
 	function sortCards(className) {
-		if (className == 'all') {
-			var cardList = class_all.cards;
-		} else {
+		if (className == 'all')
+			var cardList = classAll.cards;
+		else
 			var cardList = classes[className].cards;
-		}
 		
 		for (var rarity in cardList) {
 			var sortedArray = [];
@@ -753,8 +751,12 @@ var HSCollectionTracker = (function() {
 		var rarity = element.parentNode.parentNode.id;		
 		rarity = rarity.slice(5, rarity.length); // Cut out the "list" part
 		
-		for (var i = 1, len = list.length; i < len; i++) {			
-			var card = classes[selectedClass].cards[rarity][list[i].innerHTML];
+		for (var i = 1, len = list.length; i < len; i++) {
+			var card;
+
+			if (selectedClass == "all")
+				card = classAll.cards[rarity][list[i].innerHTML];
+			else card = classes[selectedClass].cards[rarity][list[i].innerHTML];
 			
 			if (card[selectedQuality] < getMaxCopies(rarity))
 			    updateCard(card, selectedQuality, getMaxCopies(rarity) - card[selectedQuality]);
@@ -775,8 +777,12 @@ var HSCollectionTracker = (function() {
 		var rarity = element.parentNode.parentNode.id;		
 		rarity = rarity.slice(5, rarity.length); // Cut out the "list" part
 		
-		for (var i = 1, len = list.length; i < len; i++) {			
-			var card = classes[selectedClass].cards[rarity][list[i].innerHTML];
+		for (var i = 1, len = list.length; i < len; i++) {
+			var card;
+
+			if (selectedClass == "all")
+				card = classAll.cards[rarity][list[i].innerHTML];
+			else card = classes[selectedClass].cards[rarity][list[i].innerHTML];
 			
 			if (card[selectedQuality] > 0)
 			    updateCard(card, selectedQuality, -card[selectedQuality]);
@@ -827,14 +833,13 @@ var HSCollectionTracker = (function() {
 
 		createClassTab = function (className) {
 			var listItem = document.createElement("li");
-			listItem.setAttribute("class", "col-xs-10ths nopadding");
+			listItem.setAttribute("class", "col-xs-11ths nopadding");
 			var listItemLink = document.createElement("a");
 			var span = document.createElement("span");
-			if (className in classes) {
+			if (className in classes)
 				span.innerHTML = classes[className].level; // Always level 1 for now
-			} else {
+			else
 				span.innerHTML = 1;
-			}
 			/* ---------------------------------------------
 			 To enable users to manually enter class levels.
 			 Not yet implemented
@@ -880,9 +885,9 @@ var HSCollectionTracker = (function() {
 		}
 
 		createClassTab('all');
-		for (var className in classes) {
+		
+		for (var className in classes)
 			createClassTab(className)
-		}
 
 		div.appendChild(list);
 		
@@ -940,11 +945,10 @@ var HSCollectionTracker = (function() {
 	// Displays the card lists for the specified class.
 	// Created dynamically except for the list names
 	function displayCards(className) {
-		if (className == 'all') {
-			var cardList = class_all.cards;
-		} else {
+		if (className == 'all')
+			var cardList = classAll.cards;
+		else
 			var cardList = classes[className].cards;
-		}
 		
 		// One list for each rarity in the game
 		for (var rarity in raritiesEnum) {
@@ -1041,11 +1045,10 @@ var HSCollectionTracker = (function() {
 	function displayMissingCards() {
 		document.getElementById("missingCardsClassTitle").innerHTML = selectedClass.toUpperCase();
 		
-		if (selectedClass == 'all') {
+		if (selectedClass == 'all')
 			var missingData = getMissingDataFiltered(missingCards.overall);
-		} else {
+		else
 			var missingData = getMissingDataFiltered(missingCards.classes[selectedClass]);
-		}
 
 		for (var rarity in missingData) {
 			var rarityCapitalized = capitalizeFirstLetter(rarity);
@@ -1079,11 +1082,10 @@ var HSCollectionTracker = (function() {
 	
 	// Displays the missing dust data for the selected class
 	function displayMissingDust() {
-		if (selectedClass == 'all') {
+		if (selectedClass == 'all')
 			var missingData = getMissingDataFiltered(missingDust.overall);
-		} else {
+		else
 			var missingData = getMissingDataFiltered(missingDust.classes[selectedClass]);
-		}
 
 		for (var rarity in missingData) {
 			var rarityCapitalized = capitalizeFirstLetter(rarity);
@@ -1124,6 +1126,103 @@ var HSCollectionTracker = (function() {
 		displayMissingCards();
 		displayMissingCardsOverall();
 		displayCards(selectedClass);
+	}
+	
+	// Creates and returns a table representing a deck.
+	// The deck should be an object of cards with this format:
+	//     "card name": cardCopies
+	//		...
+	// Deck and class names are optional.
+	function createDeckTable(deck, deckName, className) {
+		var cardData = {};
+		var currentDust = {
+			normal: 0,
+			golden: 0
+		};
+		var totalDust = {
+			normal: 0,
+			golden: 0
+		};		
+		
+		request = new XMLHttpRequest();
+		request.open("GET", "data/all-collectibles.json", false);
+		request.onreadystatechange = function () {
+			if(request.readyState === 4) {
+				if(request.status === 200 || request.status == 0) {
+					cardData = JSON.parse(request.responseText);
+				}
+			}
+		}
+		request.send(null);
+		
+		var table = document.createElement("table");
+		table.setAttribute("class", "tableDeck");
+		
+		// Create deck name row
+		var tr = document.createElement("tr");
+		var td = document.createElement("td");
+		td.setAttribute("class", "progress");
+		td.setAttribute("colspan", 3);
+		td.innerHTML = deckName || "Deck List";
+		tr.appendChild(td);
+		table.appendChild(tr);
+		
+		// Create card rows
+		for (var cardName in deck) {
+			var className = "";
+			var rarity = "";
+			
+			// Get necessary card data
+			for (var k = 0; k < cardData.cards.length; k++)
+			    if (cardName == cardData.cards[k].name) {
+					className = cardData.cards[k].hero;
+					rarity = cardData.cards[k].quality;
+					break;
+				}
+				
+			var card = classes[className].cards[rarity][cardName];
+			
+			// Get card copies and dust owned/missing
+			var copiesNormal = Math.min(card.normal, deck[cardName]);
+			currentDust.normal += getCraftingCost(card, "normal", Math.min(card.normal, deck[cardName]));
+			totalDust.normal += getCraftingCost(card, "normal", deck[cardName]);
+			var copiesGolden = Math.min(card.golden, deck[cardName]);
+			currentDust.golden += getCraftingCost(card, "golden", Math.min(card.golden, deck[cardName]));
+			totalDust.golden += getCraftingCost(card, "golden", deck[cardName]);
+			
+			tr = document.createElement("tr");
+			td = document.createElement("td");
+			td.innerHTML = cardName;
+			tr.appendChild(td);
+			td = document.createElement("td");
+			td.setAttribute("class", "normal");
+			td.innerHTML = copiesNormal + "/" + deck[cardName];
+			tr.appendChild(td);
+			td = document.createElement("td");
+			td.setAttribute("class", "golden");
+			td.innerHTML = copiesGolden + "/" + deck[cardName];
+			tr.appendChild(td);
+			table.appendChild(tr);
+		}
+		
+		// Create dust and progress row
+		tr = document.createElement("tr");
+		td = document.createElement("td");
+		td.setAttribute("class", "progress");
+		td.innerHTML =  Math.floor((currentDust.normal + currentDust.golden) 
+		    / (totalDust.normal + totalDust.golden) * 100) + "%";
+		tr.appendChild(td);
+		td = document.createElement("td");
+		td.setAttribute("class", "dust");
+		td.innerHTML = totalDust.normal - currentDust.normal;
+		tr.appendChild(td);
+		td = document.createElement("td");
+		td.setAttribute("class", "dust");
+		td.innerHTML = totalDust.golden - currentDust.golden;
+		tr.appendChild(td);
+		table.appendChild(tr);
+		
+		return table;
 	}
 	/*********************************************************
 	***********************PROGRESS PAGE**********************
@@ -1412,7 +1511,7 @@ var HSCollectionTracker = (function() {
 		document.getElementById("containerRow").innerHTML = template;
 		
 		// Add an event listener to the submit form
-		document.getElementById('formHearthPwn').addEventListener('submit', importHearthPwn);
+		document.getElementById('formImportHearthPwn').addEventListener('submit', importHearthPwn);
 		
 		document.getElementById("header-center").style.visibility = "hidden";
 		
@@ -1489,15 +1588,16 @@ var HSCollectionTracker = (function() {
 		} else alert('Exporting is not supported in this browser.');
 	}
 	
-	// Imports a collection from HearthPwn
+	// Imports a collection from HearthPwn.
+	// Event = formImportHearthPwn onsubmit
 	function importHearthPwn(evt) {
 		evt.preventDefault();
 		
-		document.getElementById('formHearthPwnError').innerHTML =
+		document.getElementById('importHearthPwnStatus').innerHTML =
 		    "Please wait...";
 		
 		var username = evt.target["username"].value;
-		var ids = {};
+		var cardIds = {};
 		var cardData = {};
 		
 	    var request = new XMLHttpRequest();
@@ -1505,7 +1605,7 @@ var HSCollectionTracker = (function() {
 		request.onreadystatechange = function () {
 			if(request.readyState === 4) {
 				if(request.status === 200 || request.status == 0) {
-					ids = JSON.parse(request.responseText);
+					cardIds = JSON.parse(request.responseText);
 				}
 			}
 		}
@@ -1529,7 +1629,7 @@ var HSCollectionTracker = (function() {
 			    'and xpath="//div[contains(@class, \'owns-card\')]"', function(r) {
 				// Error finding collection
 				if (r.query.results == null) {
-					document.getElementById('formHearthPwnError').innerHTML =
+					document.getElementById('importHearthPwnStatus').innerHTML =
 					    "Wrong username or collection set to private";
 					return;
 				}
@@ -1538,6 +1638,7 @@ var HSCollectionTracker = (function() {
 				
 				var results = r.query.results.div; // Array of collection
 
+				// Loop through the collection
 				for (var i = 0; i < results.length; i++) {
 					var externalID = results[i]["data-id"];
 					var name = "";
@@ -1546,41 +1647,44 @@ var HSCollectionTracker = (function() {
 					var rarity = "";
 					var copies = 0;
 					var quality = "";
-					
-					if (results[i]["data-is-gold"] == "False") {
-						quality = "normal";
-						copies = results[i].a.span["data-card-count"];
-					}
-					else {
-						quality = "golden";
-						copies = results[i].a.span[1]["data-card-count"];
-					}
 				
-					for (var j = 0; j < ids.length; j++) {
-						if (externalID == ids[j].hpid) {
-							name = ids[j].name;
+					// Get the name of the card by matching HearthPwn ids.
+					// Can grab name from HTML, but may contain odd symbols
+					for (var j = 0; j < cardIds.length; j++)
+						if (externalID == cardIds[j].hpid) {
+							name = cardIds[j].name;
 							break;
 						}
-					}
 				
-					for (var k = 0; k < cardData.cards.length; k++) {
+					// Get other necessary card data
+					for (var k = 0; k < cardData.cards.length; k++)
 						if (name == cardData.cards[k].name) {
 							className = cardData.cards[k].hero;
 							set = cardData.cards[k].set;
 							rarity = cardData.cards[k].quality;
 							break;
 						}
-					}
 				
-				copies = Math.min(copies, getMaxCopies(rarity));
+					// Get the quality and the amount of copies
+					if (results[i]["data-is-gold"] == "False") {
+						quality = "normal";
+						copies = Math.min(results[i].a.span["data-card-count"],
+						    getMaxCopies(rarity));
+					}
+					else {
+						quality = "golden";
+						copies = Math.min(results[i].a.span[1]["data-card-count"],
+						    getMaxCopies(rarity));
+					}
 
-				if (name != "" && className != "") {
-					var card = classes[className].cards[rarity][name];
-					updateCard(card, quality, copies);
+					// Add the card info to HSCT
+				    if (name != "" && className != "") {
+					    var card = classes[className].cards[rarity][name];
+					    updateCard(card, quality, copies);
 					}
 				}
 				
-				document.getElementById('formHearthPwnError').innerHTML =
+				document.getElementById('importHearthPwnStatus').innerHTML =
 				    "Collection imported successfully";
 					
 				updateLocalStorage();
@@ -1592,7 +1696,7 @@ var HSCollectionTracker = (function() {
 	*********************************************************/
 	return {
 		init: function() {
-		//	console.log(JSON.stringify(localStorage).length);
+			//console.log(JSON.stringify(localStorage).length);
 			// Check for HTML5 storage support
 			if (typeof(Storage) !== "undefined") {
 				var storedVersion = localStorage.getItem("version");

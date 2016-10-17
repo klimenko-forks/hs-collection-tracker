@@ -37,7 +37,8 @@
 		    <a class="dropdown-toggle title" data-toggle="dropdown">Options
 		    <span class="caret"></span></a>
 		    <ul class="dropdown-menu">
-			  <li><a id="link-importHearthPwn" class="title">Import from HearthPwn</a><hr></li>
+			  <li><a id="link-importHearthPwn" class="title">Import from HearthPwn</a></li>
+			  <li role="separator" class="divider"></li>
 			  <li><input type="file" id="files" name="files[]"><a id="link-import" class="title">Import from file</a></li>
 			  <li><a id="link-export" class="title">Export to file</a></li>
 		    </ul>
@@ -206,13 +207,12 @@
   <p>Here you can import a collection from <a href="http://www.hearthpwn.com/" target="_blank">HearthPwn</a>. Be sure to have your collection set to public.</p>
   <p>Note: Whenever you switch visibility of your collection, golden cards will be removed, 
      so you'll have to use Innkeeper to sync golden cards again.</p>
-
-  <form id="formHearthPwn">
+  <form id="formImportHearthPwn">
     HearthPwn username:
     <input type="text" name="username" value="">
     <input type="submit" value="Import">
   </form><br>
-  <span id="formHearthPwnError" class="special2"></span>
+  <span id="importHearthPwnStatus" class="special2"></span>
 </div>
 </script>
 <script id="template-about" type="text/html">
@@ -231,7 +231,9 @@
 <script id="template-news" type="text/html">
 <div class="col-xs-12 side-page">
   <h2>News</h2>
-  <p><span class="special2">13-09-16</span> - Added an option to import a collection from HearthPwn, located in options. You can use Innkeeper to import your collection from the game to HearthPwn, and then import it to HCT.</p>
+  <p><span class="special2">06-10-16</span> - Updated card data to Patch 6.1.3.</p>
+  <p><span class="special2">01-10-16</span> - Added an All button to the tracker which displays cards from all classes. Thanks to klimenko.</p>
+  <p><span class="special2">13-09-16</span> - Added an option to import a collection from HearthPwn, located in options. You can use Innkeeper to import your collection from the game to HearthPwn, and then import it to HSCT.</p>
   <p><span class="special2">12-08-16</span> - Added cards from One Night in Karazhan.</p>
   <p><span class="special2">25-04-16</span> - Added cards from Whispers of the Old Gods.</p>
               <p style="margin-left: 62px"> - Changed Reward cards to be craftable.</p>
