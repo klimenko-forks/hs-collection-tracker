@@ -1,6 +1,6 @@
 body {
   background-color: #FFFFFF;
-  /*font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;*/
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
   padding-top: 70px;
@@ -25,7 +25,6 @@ body {
   text-align: center;
 }
 #header-center li a {
-  font-family: "Comic Sans MS", "Palatino Linotype", "Times", serif;
   float: left;
   border-top: 4px inset #E3D3C8;  
   font-size: 10px;
@@ -78,7 +77,6 @@ body {
   text-align: center;
 }
 #classTabs li a {
-  font-family: "Comic Sans MS", "Palatino Linotype", "Times", serif;
   float: left;
   overflow: hidden;
   text-align: center;
@@ -161,7 +159,6 @@ body {
   text-align: center;  
 }
 #classTabsBar li a {
-  font-family: "Comic Sans MS", "Palatino Linotype", "Times", serif;
   float: left;
   text-decoration: none;
   font-size: 8px;
@@ -169,11 +166,16 @@ body {
   color: black;
   font-weight: bold;
   padding: 2px 8px;
-  margin: 0px 2px;
+  margin: 0px 1px;
   margin-top: 2px;
   border-radius: 4px 4px 4px 4px;
   text-transform: uppercase;
   cursor: pointer;
+}
+#classTabsBar #filtersLeft .dropdown-menu li a {
+  float: none;
+  margin: 0px;
+  border-radius: 0px;
 }
 #classTabsBar #filtersRight li a {
   float: right;
@@ -268,7 +270,6 @@ body {
   text-align: center;
 }
 #classCards li a {
-  font-family: "Comic Sans MS", "Palatino Linotype", "Times", serif;  
   box-shadow: inset 0px 0px 0px 1px #DDDDDD;
   text-decoration: none;  
   font-size: 10px;
@@ -290,7 +291,7 @@ body {
   padding: 0;
   border-radius: 0;
   background-color: rgba(150, 200, 255, 1);
-  transition: padding 0.5s, color 1s;
+  transition: padding 1s, color 2s;
   color: transparent;
   border: 0px;
   margin: 0px 1px;
@@ -300,58 +301,58 @@ body {
   padding: 10px 0px;
   color: black;
 }
-#classCards #list_free .normal1 {
+#classCards .free .normal1 {
   background-color: rgba(174, 163, 60, 0.2);
 }
-#classCards #list_free .golden1{
+#classCards .free .golden1{
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -5px 0px 0px rgba(174, 163, 60, 0.7);
 }
-#classCards #list_free .normal2 {
+#classCards .free .normal2 {
   background-color: rgba(174, 163, 60, 0.5);
 }
-#classCards #list_free .golden2 {
+#classCards .free .golden2 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -4px 0px 0px rgba(255, 225, 0, 0.7);
 }
-#classCards #list_common .normal1 {
+#classCards .common .normal1 {
   background-color: rgba(94, 111, 121, 0.2);
 }
-#classCards #list_common .golden1 {
+#classCards .common .golden1 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -5px 0px 0px rgba(94, 111, 121, 0.5);
 }
-#classCards #list_common .golden2 {
+#classCards .common .golden2 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -4px 0px 0px rgba(255, 225, 0, 0.7);
 }
-#classCards #list_common .normal2 {
+#classCards .common .normal2 {
   background-color: rgba(94, 111, 121, 0.5);
 }
-#classCards #list_rare .normal1 {
+#classCards .rare .normal1 {
   background-color: rgba(43, 136, 234, 0.2);
 }
-#classCards #list_rare .golden1 {
+#classCards .rare .golden1 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -5px 0px 0px rgba(43, 136, 234, 0.7);
 }
-#classCards #list_rare .golden2 {
+#classCards .rare .golden2 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -4px 0px 0px rgba(255, 225, 0, 0.7);
 }
-#classCards #list_rare .normal2 {
+#classCards .rare .normal2 {
   background-color: rgba(43, 136, 234, 0.5);
 }
-#classCards #list_epic .normal1 {
+#classCards .epic .normal1 {
   background-color: rgba(227, 62, 255, 0.2);
 }
-#classCards #list_epic .golden1 {
+#classCards .epic .golden1 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -5px 0px 0px rgba(227, 62, 255, 0.5);
 }
-#classCards #list_epic .golden2 {
+#classCards .epic .golden2 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -4px 0px 0px rgba(255, 225, 0, 0.7);
 }
-#classCards #list_epic .normal2 {
+#classCards .epic .normal2 {
   background-color: rgba(227, 62, 255, 0.5);
 }
-#classCards #list_legendary .normal1 {
+#classCards .legendary .normal1 {
   background-color: rgba(255, 149, 9, 0.6);
 }
-#classCards #list_legendary .golden1 {
+#classCards .legendary .golden1 {
   box-shadow: inset 0px 0px 0px 1px #DDDDDD, inset 0px -4px 0px 0px rgba(255, 120, 0, 0.7);
 }
 #classCards a:hover {
@@ -359,19 +360,19 @@ body {
   margin: -2px -1px 0 -1px;
   box-shadow: none;
 }
-#classCards #list_free a:hover {
+#classCards .free a:hover {
   border-color: rgba(174, 163, 60, 0.3);
 }
-#classCards #list_common a:hover {
+#classCards .common a:hover {
   border-color: rgba(94, 111, 121, 0.3);
 }
-#classCards #list_rare a:hover {
+#classCards .rare a:hover {
   border-color: rgba(43, 136, 234, 0.3);
 }
-#classCards #list_epic a:hover {
+#classCards .epic a:hover {
   border-color: rgba(227, 62, 255, 0.3);
 }
-#classCards #list_legendary a:hover {
+#classCards .legendary a:hover {
   border-color: rgba(255, 149, 9, 0.3);
 }
 /* ------------------------------------------ */
@@ -463,7 +464,6 @@ h2 {
   margin-bottom: 20px;
 }
 .side-page table {
-  font-family: "Comic Sans MS", "Palatino Linotype", "Times", serif;
   width: 100%;
   font-size: 12px;
   outline: solid 1px;

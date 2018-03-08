@@ -29,25 +29,29 @@ var HSCollectionTracker = (function() {
 	var setsEnum = {
 		basic: "basic",
 		classic: "classic",
-		reward: "reward",
-		promo: "promo",
+		hof: "hof",
 		naxxramas: "naxxramas",
 		gvg: "gvg",
 		blackrock: "blackrock",
 		tgt: "tgt",
 		loe: "loe",
 		wotog: "wotog",
-		onik: "onik"
+		onik: "onik",
+		msog: "msog",
+		ungoro: "ungoro",
+		kotft: "kotft",
+		kobolds: "kobolds"
 	};
 
 	var standardSetsEnum = {
 		basic: "basic",
 		classic: "classic",
-		blackrock: "blackrock",
-		tgt: "tgt",
-		loe: "loe",
 		wotog: "wotog",
-		onik: "onik"
+		onik: "onik",
+		msog: "msog",
+		ungoro: "ungoro",
+		kotft: "kotft",
+		kobolds: "kobolds"
 	};
 
 	// The number of cards and craftable cards in each set.
@@ -58,21 +62,39 @@ var HSCollectionTracker = (function() {
 	var setsUncraftable = {
 		basic: "both",
 		classic: "none",
-		reward: "none",
-		promo: "golden",
+		//reward: "none",
+		//promo: "golden",
+		hof: "none",
 		naxxramas: "none",
 		gvg: "none",
 		blackrock: "none",
 		tgt: "none",
 		loe: "none",
-		wotog: "none"
+		wotog: "none",
+		ungoro: "none",
+		kotft: "none",
+		kobolds: "none"
 	};
 	
 	var packsEnum = {
 		classic: "classic",
-		tgt: "tgt",
-		wotog: "wotog"
+		wotog: "wotog",
+		msog: "msog",
+		ungoro: "ungoro",
+		kotft: "kotft",
+		kobolds: "kobolds",
+		gvg: "gvg",
+		tgt: "tgt"
 	};
+	
+	var rewardsEnum = {
+		classic: "classic",
+		wotog: "wotog",
+		msog: "msog",
+		ungoro: "ungoro",
+		kotft: "kotft",
+		kobolds: "kobolds"
+	};	
 	
 	var craftingCost = {
 		free:      { normal: 0, golden: 0 },
@@ -115,17 +137,18 @@ var HSCollectionTracker = (function() {
 	// Persistent settings
 	var settings = {
 		excludeGoldenCards: false,
+		hideFreeCards: false,
 		showOnlyMissingCards: false
 	};
 	
-	var filterBySet = "all";
+	var filterBySet = "standard";
 	var progressSet = ""; // Chosen set for the progress table
 	
 	// Currently unused
 	var currentDust = 0;
 	var disenchantedDust = 0;
 	
-	var version = 2.161;
+	var version = 2.22;
 	
 	// Card object
 	function card(name, rarity, mana, type, className, set, uncraftable) {
@@ -213,8 +236,8 @@ var HSCollectionTracker = (function() {
 			missingDust: getProgressDataObject()
 		};
 		
-		for (set in sets)
-			for (rarity in setsCards[set]) {
+		for (var set in sets)
+			for (var rarity in setsCards[set]) {
 				if (setsCards[set][rarity][className] != undefined) {
 				    data.totalCards[rarity] += setsCards[set][rarity][className].cards;
 					data.totalCards.all += setsCards[set][rarity][className].cards;
@@ -246,7 +269,23 @@ var HSCollectionTracker = (function() {
 			
 		return data;
 	}
-	
+
+	function getData(fileName) {
+		var data;
+		
+		var request = new XMLHttpRequest();
+		request.open("GET", "data/" + fileName + ".json", false);
+		request.onreadystatechange = function () {
+			if(request.readyState === 4) {
+				if(request.status === 200 || request.status == 0) {
+					data = JSON.parse(request.responseText);
+				}
+			}
+		}
+		request.send(null);
+		
+		return data;
+	}
 	/*********************************************************
 	**************************INIT****************************
 	*********************************************************/
@@ -265,11 +304,11 @@ var HSCollectionTracker = (function() {
 	function initClassAll() {
 		classAll = new classHS('all');
 
-		for (className in classes)
-			for (rarity in classes[className].cards) {
+		for (var className in classes)
+			for (var rarity in classes[className].cards) {
 				var cards = classes[className].cards[rarity];
 				
-				for (cardName in cards)
+				for (var cardName in cards)
 					classAll.addCard(cards[cardName]);
 			}
 
@@ -310,6 +349,7 @@ var HSCollectionTracker = (function() {
 		document.getElementById("link-tracker").addEventListener("click", displayTracker);
 		document.getElementById("link-progress").addEventListener("click", displayProgress);
 		document.getElementById("link-packs").addEventListener("click", displayPacks);
+		document.getElementById("link-recipes").addEventListener("click", displayRecipes);
 		document.getElementById("link-news").addEventListener("click", displayNews);
 		document.getElementById("link-about").addEventListener("click", displayAbout);
 		document.getElementById("link-importHearthPwn").addEventListener("click", displayImportHearthPwn);
@@ -334,10 +374,16 @@ var HSCollectionTracker = (function() {
 	// setsCards[set][rarity][className].cards = total cards
 	// setsCards[set][rarity][className][quality] = craftable cards
 	function initSetsCards() {
-		setsCards = {};		
+		setsCards = {};
 		
+		// Add the rarities to the set (to get them in the "correct" order)
 		for (var set in setsEnum)
-			setsCards[set] = {};
+			setsCards[set] = { 	free: {},
+								common: {},
+								rare: {},
+								epic: {},
+								legendary: {}
+			};
 		
 		// Loop through every card in the collection and add
 		// the card's copies to its correct places
@@ -345,11 +391,7 @@ var HSCollectionTracker = (function() {
 			for (var rarity in classes[className].cards)
 				for (var cardName in classes[className].cards[rarity]) {
 					var card = classes[className].cards[rarity][cardName];
-					var set = card.set;
-					
-					// Add the rarity to the set if it doesn't exist
-					if (setsCards[set][rarity] === undefined)
-						setsCards[set][rarity] = {};
+					var set = card.set;		
 					
 					// Add the class to the rarity group if it doesn't exist
 					if (setsCards[set][rarity][className] === undefined)
@@ -387,6 +429,12 @@ var HSCollectionTracker = (function() {
 					}
 				}
 		
+		// Delete rarities not used in the set
+		for (var set in setsEnum)
+			for (var rarity in raritiesEnum)
+				if (Object.keys(setsCards[set][rarity]).length == 0)
+					delete(setsCards[set][rarity]);
+		
 		// Overall for all sets
 		setsCards.total = {};
 		for (var set in setsCards) {
@@ -421,6 +469,7 @@ var HSCollectionTracker = (function() {
 
 		// List of hearthstone cards grabbed 2016-03-31 from this chrome extension:
 		// https://chrome.google.com/webstore/detail/hearthstone-linkifier/hgfciolhdhbagnccplcficnahgleflam
+		// ^ Not updated anymore.
 		//
 		// Most valuable here are IDs in hearthpwn.com and wowhead.com databases.
 		if (!window.HS_CardData) {
@@ -575,23 +624,26 @@ var HSCollectionTracker = (function() {
 		var setMap = {
 			"Basic": setsEnum.basic,
 			"Classic": setsEnum.classic,
-			"Reward": setsEnum.reward,
-			"Promo": setsEnum.promo,
+			"Hall of Fame": setsEnum.hof,
 			"Naxxramas": setsEnum.naxxramas,
 			"Goblins vs Gnomes": setsEnum.gvg,
 			"Blackrock Mountain": setsEnum.blackrock,
 			"The Grand Tournament": setsEnum.tgt,
 			"The League of Explorers": setsEnum.loe,
 			"Whispers of the Old Gods": setsEnum.wotog,
-			"Karazhan": setsEnum.onik,
+			"One Night in Karazhan": setsEnum.onik,
+			"Mean Streets of Gadgetzan": setsEnum.msog,
+			"Journey to Un'Goro": setsEnum.ungoro,
+			"Knights of the Frozen Throne": setsEnum.kotft,
+			"Kobolds & Catacombs": setsEnum.kobolds
 		};
 		
 		var importCardData = function (cards, set) {
 			cards.forEach(function (newCard) {
-				if (newCard.type != 'Hero') {
+				if (!newCard.cardId.includes("HERO")) {
 					var className = newCard.playerClass ? newCard.playerClass.toLowerCase() : classesEnum.neutral;
-					// Cards like Elven Archer are in the basic set with common rarity, but setting these to free to preserve HCT behavior
-					var rarity = set == setsEnum.basic ? raritiesEnum.free : newCard.rarity.toLowerCase();
+					var rarity = newCard.rarity.toLowerCase();
+					
 					classes[className].addCard(new card(newCard.name, rarity, newCard.cost, newCard.type.toLowerCase(), className, set, setsUncraftable[set]));
 				}
 			});
@@ -606,6 +658,7 @@ var HSCollectionTracker = (function() {
 		}).done(function (response) {
 			Object.keys(setMap).forEach (function (apiSet) {
 				var set = setMap[apiSet];
+				
 				if (set) {
 					importCardData(response[apiSet], set);
 				} else { // Does not work
@@ -619,17 +672,7 @@ var HSCollectionTracker = (function() {
 	
 	// Imports cards from a local JSON-file
 	function importCardsOffline() {
-		var cardData;
-		var request = new XMLHttpRequest();
-		request.open("GET", "data/all-collectibles.json", false);
-		request.onreadystatechange = function () {
-			if(request.readyState === 4) {
-				if(request.status === 200 || request.status == 0) {
-					cardData = JSON.parse(request.responseText);
-				}
-			}
-		}
-		request.send(null);
+		var cardData = getData("all-collectibles");
 		
 		for (var i = 0, l = cardData.cards.length; i < l; i++) {
 			var c = cardData.cards[i];
@@ -748,8 +791,7 @@ var HSCollectionTracker = (function() {
 	// by clicking on the "apply to all" button
 	function addAll(element) {
 		var list = element.parentNode.parentNode.getElementsByTagName("a");
-		var rarity = element.parentNode.parentNode.id;		
-		rarity = rarity.slice(5, rarity.length); // Cut out the "list" part
+		var rarity = element.parentNode.parentNode.getAttribute("class");
 		
 		for (var i = 1, len = list.length; i < len; i++) {
 			var card;
@@ -757,7 +799,7 @@ var HSCollectionTracker = (function() {
 			if (selectedClass == "all")
 				card = classAll.cards[rarity][list[i].innerHTML];
 			else card = classes[selectedClass].cards[rarity][list[i].innerHTML];
-			
+
 			if (card[selectedQuality] < getMaxCopies(rarity))
 			    updateCard(card, selectedQuality, getMaxCopies(rarity) - card[selectedQuality]);
 		}
@@ -774,8 +816,7 @@ var HSCollectionTracker = (function() {
 	// by right-clicking on the "apply to all" button
 	function removeAll(element) {
 		var list = element.parentNode.parentNode.getElementsByTagName("a");
-		var rarity = element.parentNode.parentNode.id;		
-		rarity = rarity.slice(5, rarity.length); // Cut out the "list" part
+		var rarity = element.parentNode.parentNode.getAttribute("class");
 		
 		for (var i = 1, len = list.length; i < len; i++) {
 			var card;
@@ -825,12 +866,12 @@ var HSCollectionTracker = (function() {
 	function displayClassTabs() {
 		var div = document.getElementById("classTabs");
 		var list = document.createElement("ul");
+		
 		// Set the CSS color of the class tabs bar (default neutral)
 		var classTabsClass = document.getElementById("classTabsBar").getAttribute("class");		
 		document.getElementById("classTabsBar").setAttribute("class", classTabsClass + " " + selectedClass);
 		
 		// Create the class tabs
-
 		createClassTab = function (className) {
 			var listItem = document.createElement("li");
 			listItem.setAttribute("class", "col-xs-11ths nopadding");
@@ -890,24 +931,54 @@ var HSCollectionTracker = (function() {
 			createClassTab(className)
 
 		div.appendChild(list);
-		
+	}
+	
+	// Currently only handles control of the filter list.
+	// Display is done in HTML (should add it here)
+	function displayFilterList() {		
 		// Init left filter list (filter sets described in HTML)
 		var filterListLeft = document.getElementById("filtersLeft").getElementsByTagName("a");
 		for (var i = 0; i < filterListLeft.length; i++) {
 			var filterListItem = filterListLeft[i];
+			
 			// Set the initial filter as selected
-			if (filterBySet === filterListItem.innerHTML.toLowerCase())
+			if (filterBySet === filterListItem.innerHTML.toLowerCase()) {
 				filterListItem.setAttribute("class", "selected");
+				
+				//  In case element is part of a dropdown-menu
+				var dropdown = filterListItem.parentElement.
+					parentElement.parentElement.childNodes[1];
+					
+				if (dropdown.getAttribute("data-toggle")) {
+					dropdown.innerHTML = filterListItem.innerHTML + '<span class="caret"></span>';
+					dropdown.setAttribute("class", "selected");
+				}			
+			}
+			
+			// Ignore clicks on the dropdown-menu itself
+			if (filterListItem.getAttribute("data-toggle"))
+				continue;
+			
 			// Closure function for when clicking on a filter
 	        (function (filterListItem) {
 			    filterListItem.addEventListener("click", function() {
 					// Switch selected filter
 					filterBySet = filterListItem.innerHTML.toLowerCase();
-
+					
 					// Deselect all other filters
 					var filterListLeft = document.getElementById("filtersLeft").getElementsByTagName("a");
 					for (var i = 0; i < filterListLeft.length; i++)
                       filterListLeft[i].removeAttribute("class");
+				  
+					//  In case element is part of a dropdown-menu
+				    var dropdown = filterListItem.parentElement.
+					    parentElement.parentElement.childNodes[1];
+					
+					if (dropdown.getAttribute("data-toggle")) {
+						dropdown.innerHTML = filterListItem.innerHTML + '<span class="caret"></span>';
+						dropdown.setAttribute("class", "selected");
+					}
+						
 				    filterListItem.setAttribute("class", "selected");
 					
 					// Display the cards and missing data with the new filter
@@ -963,12 +1034,18 @@ var HSCollectionTracker = (function() {
 			var listItem = document.createElement("li");
 			var linkItemLink = document.createElement("a");
 			linkItemLink.textContent = "Apply to all";
-			linkItemLink.setAttribute("class", "buttonAll");
+			linkItemLink.setAttribute("class", "buttonAll noselect");
 			linkItemLink.addEventListener("click", function() { addAll(this); });
 			linkItemLink.addEventListener("contextmenu", function() { removeAll(this); });
 			listItem.appendChild(linkItemLink);
 			list.appendChild(listItem);
 			
+			// Fill in list_free with common cards instead
+			if (rarity == "free" && settings.hideFreeCards) {
+				document.getElementById("list_free").setAttribute("class", "common");
+				continue;
+			}
+
 			// Loop through all cards in the collection of the selected class.
 			// List is already sorted
 			for (var name in cardList[rarity]) {
@@ -988,7 +1065,15 @@ var HSCollectionTracker = (function() {
 						"golden" + cardList[rarity][name].golden + " " + "noselect");
 
 					listItem.appendChild(listItemLink);
-					list.appendChild(listItem);
+					
+					// Split common cards in two lists if hideFreeCards is on
+					if (rarity == "common" && settings.hideFreeCards) {
+						if (document.getElementById("list_free").getElementsByTagName("li").length <= 
+								document.getElementById("list_common").getElementsByTagName("li").length)
+							document.getElementById("list_free").appendChild(listItem);
+						else list.appendChild(listItem);
+					}
+					else list.appendChild(listItem);
 				}
 			}
 		}
@@ -1128,13 +1213,25 @@ var HSCollectionTracker = (function() {
 		displayCards(selectedClass);
 	}
 	
+	// Toggles the exclude golden cards setting and updates view
+	function toggleHideFreeCards() {
+		settings.hideFreeCards = !settings.hideFreeCards;
+		
+		if (document.getElementById("list_free").getAttribute("class") == "free")
+			document.getElementById("list_free").setAttribute("class", "common");
+		else document.getElementById("list_free").setAttribute("class", "free");
+		
+		localStorage.setItem("settings", JSON.stringify(settings));
+		displayCards(selectedClass);
+	}	
+	
 	// Creates and returns a table representing a deck.
 	// The deck should be an object of cards with this format:
 	//     "card name": cardCopies
 	//		...
 	// Deck and class names are optional.
 	function createDeckTable(deck, deckName, className) {
-		var cardData = {};
+		var cardData = getData("all-collectibles");
 		var currentDust = {
 			normal: 0,
 			golden: 0
@@ -1143,17 +1240,6 @@ var HSCollectionTracker = (function() {
 			normal: 0,
 			golden: 0
 		};		
-		
-		request = new XMLHttpRequest();
-		request.open("GET", "data/all-collectibles.json", false);
-		request.onreadystatechange = function () {
-			if(request.readyState === 4) {
-				if(request.status === 200 || request.status == 0) {
-					cardData = JSON.parse(request.responseText);
-				}
-			}
-		}
-		request.send(null);
 		
 		var table = document.createElement("table");
 		table.setAttribute("class", "tableDeck");
@@ -1171,12 +1257,14 @@ var HSCollectionTracker = (function() {
 		for (var cardName in deck) {
 			var className = "";
 			var rarity = "";
+			//var image = "";
 			
 			// Get necessary card data
 			for (var k = 0; k < cardData.cards.length; k++)
 			    if (cardName == cardData.cards[k].name) {
 					className = cardData.cards[k].hero;
 					rarity = cardData.cards[k].quality;
+					//image = cardData.cards[k].image_url;
 					break;
 				}
 				
@@ -1193,15 +1281,18 @@ var HSCollectionTracker = (function() {
 			tr = document.createElement("tr");
 			td = document.createElement("td");
 			td.innerHTML = cardName;
+			//td.style.background = "url('" + image + "') -70px -120px no-repeat";
 			tr.appendChild(td);
 			td = document.createElement("td");
 			td.setAttribute("class", "normal");
 			td.innerHTML = copiesNormal + "/" + deck[cardName];
 			tr.appendChild(td);
-			td = document.createElement("td");
-			td.setAttribute("class", "golden");
-			td.innerHTML = copiesGolden + "/" + deck[cardName];
-			tr.appendChild(td);
+			if (!settings.excludeGoldenCards) {
+				td = document.createElement("td");
+				td.setAttribute("class", "golden");
+				td.innerHTML = copiesGolden + "/" + deck[cardName];
+				tr.appendChild(td);
+			}
 			table.appendChild(tr);
 		}
 		
@@ -1209,17 +1300,21 @@ var HSCollectionTracker = (function() {
 		tr = document.createElement("tr");
 		td = document.createElement("td");
 		td.setAttribute("class", "progress");
-		td.innerHTML =  Math.floor((currentDust.normal + currentDust.golden) 
-		    / (totalDust.normal + totalDust.golden) * 100) + "%";
+		if (!settings.excludeGoldenCards)
+			td.innerHTML =  Math.floor((currentDust.normal + currentDust.golden) 
+				/ (totalDust.normal + totalDust.golden) * 100) + "%";
+		else td.innerHTML =  Math.floor(currentDust.normal / totalDust.normal * 100) + "%";
 		tr.appendChild(td);
 		td = document.createElement("td");
 		td.setAttribute("class", "dust");
 		td.innerHTML = totalDust.normal - currentDust.normal;
 		tr.appendChild(td);
-		td = document.createElement("td");
-		td.setAttribute("class", "dust");
-		td.innerHTML = totalDust.golden - currentDust.golden;
-		tr.appendChild(td);
+		if (!settings.excludeGoldenCards) {
+			td = document.createElement("td");
+			td.setAttribute("class", "dust");
+			td.innerHTML = totalDust.golden - currentDust.golden;
+			tr.appendChild(td);
+		}
 		table.appendChild(tr);
 		
 		return table;
@@ -1254,10 +1349,11 @@ var HSCollectionTracker = (function() {
 		else setList = standardSetsEnum;
 		
 		var rarities = {};
-		for (set in setList)
-			for (rarity in setsCards[set])
+		for (var cardSet in setList)
+			for (var rarity in setsCards[cardSet])
 			    if (rarities[rarity] == undefined)
 					rarities[rarity] = rarity;
+
 		// Don't display an "all" column for sets only containing one rarity
 		if (Object.keys(rarities).length != 1)
 		    rarities.all = "all";
@@ -1278,7 +1374,10 @@ var HSCollectionTracker = (function() {
 		// Create rarities row
 		tr = document.createElement("tr");
 		tr.appendChild(document.createElement("td"));
-		for (rarity in rarities) {
+		for (var rarity in rarities) {
+			if (rarity == "free" && settings.hideFreeCards &&
+   			    (set == "standard" || set == "total"))
+				continue;
 		    td = document.createElement("td");
 		    td.innerHTML = capitalizeFirstLetter(rarity);
 		    tr.appendChild(td);
@@ -1288,7 +1387,7 @@ var HSCollectionTracker = (function() {
 		table.appendChild(tr);
 		
 		// Create the class rows
-		for (className in classesEnum) {
+		for (var className in classesEnum) {
 			table.appendChild(createProgressTableRow("normal", setList, rarities, className));
 			// Exclude golden data if the setting is on
 			if (!settings.excludeGoldenCards)
@@ -1317,14 +1416,17 @@ var HSCollectionTracker = (function() {
 		tr.appendChild(td);
 		
 		// Create data for all rarities
-		for (rarity in rarities) {
+		for (var rarity in rarities) {
+			if (rarity == "free" && settings.hideFreeCards &&
+			    (sets == standardSetsEnum || sets.hasOwnProperty("total")))
+				continue;
 			// Create the card data
 		    var td = document.createElement("td");
 			var text = "-";
 			var totalCards = data.totalCards[rarity];
 			var missingCards = data.missingCards[rarity];
 
-			// If collectible cards for this class/set/rarity
+			// If there are collectible cards for this class/set/rarity
 			if (totalCards != 0) {
 				// Example: 0/50 (0%)
 				text = totalCards - missingCards + "/" + totalCards +
@@ -1363,14 +1465,38 @@ var HSCollectionTracker = (function() {
 	// Needs more commenting
 	function updatePackGuide() {
 		var averageValue = 0;
-		for (set in packsEnum) {
-		    for (rarity in chanceOfGetting) {
-		            averageValue += chanceOfGetting[rarity].normal * (((setsCards[set][rarity].total.cards - missingCards.overall[set][rarity].normal) / setsCards[set][rarity].total.cards) * disenchantmentValue[rarity].normal
-		                + (missingCards.overall[set][rarity].normal / setsCards[set][rarity].total.cards) * craftingCost[rarity].normal);
+		for (var set in packsEnum) {
+		    for (var rarity in chanceOfGetting) {
+				// Value for guaranteed legendary, when any is missing
+				if (rarity == "legendary" && missingCards.overall[set][rarity].normal > 0 && missingCards.overall[set][rarity].golden > 0) {
+					averageValue += chanceOfGetting[rarity].normal * craftingCost[rarity].normal;
 					if (!settings.excludeGoldenCards)
-					    averageValue += chanceOfGetting[rarity].golden * (((setsCards[set][rarity].total.cards - missingCards.overall[set][rarity].golden) / setsCards[set][rarity].total.cards) * disenchantmentValue[rarity].golden
-		                    + (missingCards.overall[set][rarity].golden / setsCards[set][rarity].total.cards) * craftingCost[rarity].golden);
+						averageValue += chanceOfGetting[rarity].golden * craftingCost[rarity].golden;
 					else averageValue += chanceOfGetting[rarity].golden * disenchantmentValue[rarity].golden;
+					continue;
+				}
+				
+				var dupesNormal = 0, dupesGolden = 0;
+				var totalCards = setsCards[set][rarity].total.cards / getMaxCopies(rarity);
+
+				for (var className in classesEnum)
+					for (var cardName in classes[className].cards[rarity]) {
+						var card = classes[className].cards[rarity][cardName];
+						
+						if (card.set == set) {
+							if (card.normal == getMaxCopies(rarity))
+								dupesNormal++;
+							if (card.golden == getMaxCopies(rarity))
+								dupesGolden++;
+						}
+					}
+				
+				averageValue += chanceOfGetting[rarity].normal * ((dupesNormal / totalCards) * disenchantmentValue[rarity].normal
+		            + ((totalCards - dupesNormal) / totalCards) * craftingCost[rarity].normal);
+				if (!settings.excludeGoldenCards)
+				    averageValue += chanceOfGetting[rarity].golden * ((dupesGolden / totalCards) * disenchantmentValue[rarity].golden
+		                + ((totalCards - dupesGolden) / totalCards) * craftingCost[rarity].golden);
+				else averageValue += chanceOfGetting[rarity].golden * disenchantmentValue[rarity].golden;
 				}
 		
 		    document.getElementById(set + "AverageDust").innerHTML = (averageValue * 5).toFixed(1);
@@ -1391,23 +1517,31 @@ var HSCollectionTracker = (function() {
 			epic: 0
 		};
 		
-		var missing = {
+		var dupes = {
 			common: 0,
 			rare: 0,
 			epic: 0
 		};
 		
-		for (set in packsEnum) {
-		    for (rarity in averageDust) {
-				total[rarity] += setsCards[set][rarity].total.cards;
-				missing[rarity] += missingCards.overall[set][rarity].golden;
+		for (var set in rewardsEnum) {
+		    for (var rarity in averageDust) {
+				total[rarity] += setsCards[set][rarity].total.cards / getMaxCopies(rarity);
+				
+				for (var className in classesEnum)
+					for (var cardName in classes[className].cards[rarity]) {
+						var card = classes[className].cards[rarity][cardName];
+						
+						if (card.set == set)
+							if (card.golden == getMaxCopies(rarity))
+								dupes[rarity]++;
+					}	
 			}
 		}
 		
-		for (rarity in averageDust) {
+		for (var rarity in averageDust) {
 		    if (!settings.excludeGoldenCards)
-			    averageDust[rarity] += ((total[rarity] - missing[rarity]) / total[rarity]) * disenchantmentValue[rarity].golden
-		            + (missing[rarity] / total[rarity]) * craftingCost[rarity].golden;
+			    averageDust[rarity] += (dupes[rarity] / total[rarity]) * disenchantmentValue[rarity].golden
+		            + ((total[rarity] - dupes[rarity]) / total[rarity]) * craftingCost[rarity].golden;
 		    else averageDust[rarity] = disenchantmentValue[rarity].golden;
 		}
 		
@@ -1416,6 +1550,39 @@ var HSCollectionTracker = (function() {
 		document.getElementById("chest10AverageDust").innerHTML = (averageDust.common * 2 + averageDust.rare + 5).toFixed(1);
 		document.getElementById("chest5AverageDust").innerHTML = (averageDust.common * 2 + averageDust.epic + 5).toFixed(1);
 		document.getElementById("chestLegendaryAverageDust").innerHTML = (averageDust.common * 3 + averageDust.epic).toFixed(1);
+	}
+	/*********************************************************
+	**********************DECK RECIPES************************
+	*********************************************************/
+	// Displays deck recipes for the selected class in the drop-down list
+	function displayDeckRecipes(evt) {
+		var className = document.getElementById('selectRecipes').value;
+		
+		// Function is invoked by code when accessing the recipes page,
+		// but otherwise the tables need to be removed each time a new
+		// class is selected.
+		if (evt != undefined) {
+		    document.getElementById("containerRow").childNodes[1].removeChild(
+		        document.getElementById("containerRow").childNodes[1].lastChild);
+		}
+		
+		var recipes = getData("deck-recipes");
+		
+		var side = document.getElementsByClassName("side-page")[0];
+
+		var div = document.createElement("div");
+		div.setAttribute("class", "mainDiv");
+		var div2 = document.createElement("div");
+		div2.setAttribute("class", "row");
+		for (var i = 0; i < recipes[className].length; i++) {
+		    var div3 = document.createElement("div");
+		    div3.setAttribute("class", "col-xs-4");
+		    div3.appendChild(createDeckTable(recipes[className][i].deck,
+			    recipes[className][i].name));
+		    div2.appendChild(div3);
+		}
+		div.appendChild(div2);
+		side.appendChild(div);
 	}
 	/*********************************************************
 	**********************HTML TEMPLATES**********************
@@ -1463,11 +1630,28 @@ var HSCollectionTracker = (function() {
         }
 	}
 	
+	function displayRecipes() {
+		var template = document.getElementById("template-recipes").innerHTML;
+		document.getElementById("containerRow").innerHTML = template;
+			
+		// Add an event listener to the drop-down list that will display deck recipes
+		document.getElementById('selectRecipes').addEventListener('change', displayDeckRecipes);
+		
+		displayDeckRecipes();
+		
+		document.getElementById("header-center").style.visibility = "hidden";
+		
+		document.oncontextmenu = function() {
+            return true;
+        }
+	}
+	
 	function displayTracker() {
 		var template = document.getElementById("template-tracker").innerHTML;
 		document.getElementById("containerRow").innerHTML = template;
 		
 		displayClassTabs();
+		displayFilterList();
 		displayCards(selectedClass);
 		displayMissingCards();
 		displayMissingCardsOverall();
@@ -1476,6 +1660,9 @@ var HSCollectionTracker = (function() {
 		
 		document.getElementById("checkboxGolden").addEventListener("change", toggleGoldenCards);
 		document.getElementById("checkboxGolden").checked = settings.excludeGoldenCards;
+		
+		document.getElementById("checkboxHideFreeCards").addEventListener("change", toggleHideFreeCards);
+		document.getElementById("checkboxHideFreeCards").checked = settings.hideFreeCards;
 		
 		// Make sure the quality buttons are visible while on the tracker
 		document.getElementById("header-center").style.visibility = "visible";
@@ -1597,53 +1784,44 @@ var HSCollectionTracker = (function() {
 		    "Please wait...";
 		
 		var username = evt.target["username"].value;
-		var cardIds = {};
-		var cardData = {};
-		
-	    var request = new XMLHttpRequest();
-		request.open("GET", "data/card-ids.json", false);
-		request.onreadystatechange = function () {
-			if(request.readyState === 4) {
-				if(request.status === 200 || request.status == 0) {
-					cardIds = JSON.parse(request.responseText);
-				}
-			}
-		}
-		request.send(null);
-		
-		request = new XMLHttpRequest();
-		request.open("GET", "data/all-collectibles.json", false);
-		request.onreadystatechange = function () {
-			if(request.readyState === 4) {
-				if(request.status === 200 || request.status == 0) {
-					cardData = JSON.parse(request.responseText);
-				}
-			}
-		}
-		request.send(null);
-		
+		var cardIds = getData("card-ids");
+		var cardData = getData("all-collectibles");
+				
 		// Get the collection data
 		YUI().use('yql', function(Y) {
-			Y.YQL('select * from html where ' +
+			Y.YQL('select * from htmlstring where ' +
 			    'url="http://www.hearthpwn.com/members/' + username + '/collection" ' +
 			    'and xpath="//div[contains(@class, \'owns-card\')]"', function(r) {
-				// Error finding collection
-				if (r.query.results == null) {
+				
+				console.log(r);
+				
+				try {
+					// Error finding collection
+					if (r.query.results.result == "") {
+						document.getElementById('importHearthPwnStatus').innerHTML =
+							"Wrong username or collection set to private";
+						return;
+					}
+				}
+				catch(e) {
 					document.getElementById('importHearthPwnStatus').innerHTML =
-					    "Wrong username or collection set to private";
+						"Importing failed. Try editing and saving collection on HearthPwn again";
 					return;
 				}
 				
 				initCollection();
 				
-				var results = r.query.results.div; // Array of collection
-
+				// Trim HTML source and convert to JSON
+				var html = r.query.results.result.replace(/&#13;/g, '');
+				html = html.replace(/\n/ig, '');
+				html = html.replace(/\s\s+/g, '');
+				var results = html2json(html).child; // Array of collection
+				
 				// Loop through the collection
 				for (var i = 0; i < results.length; i++) {
-					var externalID = results[i]["data-id"];
+					var externalID = results[i].attr["data-id"];
 					var name = "";
 					var className = "";
-					var set = "";
 					var rarity = "";
 					var copies = 0;
 					var quality = "";
@@ -1660,23 +1838,22 @@ var HSCollectionTracker = (function() {
 					for (var k = 0; k < cardData.cards.length; k++)
 						if (name == cardData.cards[k].name) {
 							className = cardData.cards[k].hero;
-							set = cardData.cards[k].set;
 							rarity = cardData.cards[k].quality;
 							break;
 						}
 				
 					// Get the quality and the amount of copies
-					if (results[i]["data-is-gold"] == "False") {
+					if (results[i].attr["data-is-gold"] == "False") {
 						quality = "normal";
-						copies = Math.min(results[i].a.span["data-card-count"],
+						copies = Math.min(results[i].child[0].child[1].attr["data-card-count"],
 						    getMaxCopies(rarity));
 					}
 					else {
 						quality = "golden";
-						copies = Math.min(results[i].a.span[1]["data-card-count"],
+						copies = Math.min(results[i].child[0].child[1].attr["data-card-count"],
 						    getMaxCopies(rarity));
 					}
-
+					
 					// Add the card info to HSCT
 				    if (name != "" && className != "") {
 					    var card = classes[className].cards[rarity][name];
@@ -1688,6 +1865,12 @@ var HSCollectionTracker = (function() {
 				    "Collection imported successfully";
 					
 				updateLocalStorage();
+				}, {
+			    format: 'json',
+				env: 'store://datatables.org/alltableswithkeys'
+				}, {
+				base: '://query.yahooapis.com/v1/public/yql?', //Different base URL for private data
+				proto: 'https' //Connect using SSL
 			});
 		});
 	}
@@ -1720,7 +1903,7 @@ var HSCollectionTracker = (function() {
 						news.className = news.className + " news";
 					}
 					
-				    updateLocalStorage();
+					updateLocalStorage();
 					localStorage.setItem("currentDust", currentDust);
 					localStorage.setItem("disenchantedDust", disenchantedDust);
 					localStorage.setItem("version", version);
